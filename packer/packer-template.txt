@@ -1,0 +1,9 @@
+/* variables that can be used within this packer template */
+
+/*
+    different platforms you can use to build an image, we use
+    'virtualbox-iso' but we can build on cloud platforms as well
+    "type": "amazon-ebs" - for aws
+    "type": "googlecompute" - gcp
+    "type": "digitalocean" - for, obviously, digital ocean
+*/
