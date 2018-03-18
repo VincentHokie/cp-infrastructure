@@ -1,29 +1,29 @@
 # Begin HTTP
-resource "google_compute_global_forwarding_rule" "vof-http" {
-  name       = "${var.env_name}-vof-http"
+resource "google_compute_global_forwarding_rule" "cp-http" {
+  name       = "cp-http-fr"
   ip_address = "${var.reserved_env_ip}"
-  target     = "${google_compute_target_http_proxy.vof-http-proxy.self_link}"
+  target     = "${google_compute_target_http_proxy.cp-http-proxy.self_link}"
   port_range = "80"
 }
 
-resource "google_compute_target_http_proxy" "vof-http-proxy" {
-  name    = "${var.env_name}-vof-proxy"
-  url_map = "${google_compute_url_map.vof-http-url-map.self_link}"
+resource "google_compute_target_http_proxy" "cp-http-proxy" {
+  name    = "cp-http-proxy"
+  url_map = "${google_compute_url_map.cp-http-url-map.self_link}"
 }
 
 # End HTTP
 
 # Begin HTTPS
-resource "google_compute_global_forwarding_rule" "vof-https" {
-  name       = "${var.env_name}-vof-https"
+resource "google_compute_global_forwarding_rule" "cp-https" {
+  name       = "cp-https-fr"
   ip_address = "${var.reserved_env_ip}"
-  target     = "${google_compute_target_https_proxy.vof-https-proxy.self_link}"
+  target     = "${google_compute_target_https_proxy.cp-https-proxy.self_link}"
   port_range = "443"
 }
 
-resource "google_compute_ssl_certificate" "vof-ssl-certificate" {
-  name_prefix = "vof-certificate-"
-  description = "VOF HTTPS certificate"
+resource "google_compute_ssl_certificate" "cp-ssl-certificate" {
+  name_prefix = "cp-certificate-"
+  description = "CP HTTPS certificate"
   private_key = "${file("../shared/andela_key.key")}"
   certificate = "${file("../shared/andela_certificate.crt")}"
 
@@ -32,16 +32,16 @@ resource "google_compute_ssl_certificate" "vof-ssl-certificate" {
   }
 }
 
-resource "google_compute_target_https_proxy" "vof-https-proxy" {
-  name             = "${var.env_name}-vof-https-proxy"
-  url_map          = "${google_compute_url_map.vof-http-url-map.self_link}"
-  ssl_certificates = ["${google_compute_ssl_certificate.vof-ssl-certificate.self_link}"]
+resource "google_compute_target_https_proxy" "cp-https-proxy" {
+  name             = "cp-https-proxy"
+  url_map          = "${google_compute_url_map.cp-http-url-map.self_link}"
+  ssl_certificates = ["${google_compute_ssl_certificate.cp-ssl-certificate.self_link}"]
 }
 
 # End HTTPS
 
-resource "google_compute_url_map" "vof-http-url-map" {
-  name            = "${var.env_name}-vof-url-map"
+resource "google_compute_url_map" "cp-http-url-map" {
+  name            = "cp-url-map"
   default_service = "${google_compute_backend_service.web.self_link}"
 
   host_rule {
@@ -54,20 +54,15 @@ resource "google_compute_url_map" "vof-http-url-map" {
     default_service = "${google_compute_backend_service.web.self_link}"
 
     path_rule {
-      paths   = ["/cable"]
-      service = "${google_compute_backend_service.redis-front.self_link}"
-    }
-
-    path_rule {
       paths   = ["/*"]
       service = "${google_compute_backend_service.web.self_link}"
     }
   }
 }
 
-resource "google_compute_firewall" "vof-internal-firewall" {
-  name    = "${var.env_name}-vof-internal-network"
-  network = "${google_compute_network.vof-network.name}"
+resource "google_compute_firewall" "cp-internal-firewall" {
+  name    = "cp-internal-network"
+  network = "${google_compute_network.cp-network.name}"
 
   allow {
     protocol = "icmp"
@@ -88,9 +83,9 @@ resource "google_compute_firewall" "vof-internal-firewall" {
   ]
 }
 
-resource "google_compute_firewall" "vof-public-firewall" {
-  name    = "${var.env_name}-vof-public-firewall"
-  network = "${google_compute_network.vof-network.name}"
+resource "google_compute_firewall" "cp-public-firewall" {
+  name    = "cp-public-firewall"
+  network = "${google_compute_network.cp-network.name}"
 
   allow {
     protocol = "tcp"
@@ -98,18 +93,30 @@ resource "google_compute_firewall" "vof-public-firewall" {
   }
 
   source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["${var.env_name}-vof-lb"]
+  target_tags   = ["cp-lb"]
 }
 
-resource "google_compute_firewall" "vof-allow-healthcheck-firewall" {
-  name    = "${var.env_name}-vof-allow-healthcheck-firewall"
+resource "google_compute_firewall" "cp-allow-healthcheck-firewall" {
+  name    = "cp-allow-healthcheck-firewall"
   network = "${google_compute_network.vof-network.name}"
 
   allow {
     protocol = "tcp"
-    ports    = ["8080"]
+    ports    = ["80"]
   }
 
-  source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
+  source_ranges = ["0.0.0.0/0"]
   target_tags   = ["${var.env_name}-vof-app-server", "vof-app-server"]
+}
+
+resource "google_compute_firewall" "cp-ssh-firewall" {
+  name    = "cp-ssh-firewall"
+  network = "${google_compute_network.vof-network.name}"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
 }

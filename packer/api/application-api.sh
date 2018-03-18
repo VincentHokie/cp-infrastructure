@@ -1,11 +1,17 @@
-#!/bin/bash -eux
+#!/usr/bin/env bash
 
-apt-get -y install nginx
-sed -i -e '0,/root \/usr\/share\/nginx\/html/s//root \/home\/vincentasantehokie\/build' /etc/nginx/sites-available/default
+# Exit immediately if a command exits with a non-zero status.
+set -o errexit
+
+# mysqldump |gzip. The exit status of the last command that threw a non-zero exit code is returned.
+set -o pipefail
+
+sudo apt-get -y install nginx
+# sudo sed -i -e '0,/root \/usr\/share\/nginx\/html/s//root \/home\/vincentasantehokie\/build' /etc/nginx/sites-available/default
 
 
 # install git, needed for acquiring webapp source code
-apt-get -y install git
+sudo apt-get -y install git
 
 cd ~
 
@@ -23,6 +29,8 @@ virtualenv --python=python3 .
 source bin/activate
 pip install -r requirements.txt
 
+# Treat unset variables as an error when substituting.
+set -o nounset
 
 # create nginx config file
 echo "server {
@@ -91,6 +99,7 @@ sudo supervisorctl start andela_flask-api
 # export MAIL_DEFAULT_SENDER="andelatestmail@gmail.com"
 
 # reload nginx to serve from the directory
-service nginx reload
+sudo nginx -t
+sudo /etc/init.d/nginx restart
 
 echo 'Environment is ready, you should fork and clone the repo now.'

@@ -1,37 +1,37 @@
 #!/bin/bash -eux
 
-apt-get update
-do-release-upgrade
-apt-get -y upgrade
+sudo apt-get update -y
+# sudo do-release-upgrade
+sudo apt-get -y upgrade
 
 # ensure the correct kernel headers are installed
-apt-get -y install linux-headers-$(uname -r)
+sudo apt-get -y install linux-headers-$(uname -r)
 # fix broken dependencies
-apt-get -y -f install
+sudo apt-get -y -f install
 # update package index on boot
-cat <<EOF > /etc/init/refresh-apt.conf
-description "update package index"
-start on networking
-task
-exec /usr/bin/apt-get update
-EOF
+# cat <<EOF > /etc/init/refresh-apt.conf
+# description "update package index"
+# start on networking
+# task
+# exec /usr/bin/apt-get update
+# EOF
 
 # install curl to fix broken wget while retrieving content from secured sites
-apt-get -y install curl
+sudo apt-get -y install curl
 
 # install general purpose packages
 # install rsync
 # used command for copying and synchronizing files and directories remotely as well
 # as locally in Linux/Unix systems. With the help of rsync command you can copy and
 # synchronize your data remotely and locally across directories, 
-apt-get -y install rsync
+sudo apt-get -y install rsync
 
 # install screen
-apt-get -y install screen
+sudo apt-get -y install screen
 
 # install git
 echo "Installing git"
-apt-get -y install git
+sudo apt-get -y install git
 
 # sshd config
 # OpenSSH server reads a configuration file when it is started (/etc/ssh/sshd_config)
@@ -44,7 +44,7 @@ apt-get -y install git
 # Specifies whether sshd(8) should look up the remote host name and
 # check that the resolved host name for the remote IP address maps
 # back to the very same IP address.
-echo "UseDNS no" >> /etc/ssh/sshd_config
+# sudo echo "UseDNS no" >> /etc/ssh/sshd_config
 
 # Specifies whether user authentication based on
 # GSSAPI(Generic_Security_Services_Application_Program_Interface) is allowed
@@ -62,9 +62,9 @@ echo "UseDNS no" >> /etc/ssh/sshd_config
 # by GSSAPI wrapping include confidentiality (secrecy) and integrity (authenticity). The GSSAPI can
 # also provide local guarantees about the identity of the remote user or remote host.
 
-echo "GSSAPIAuthentication no" >> /etc/ssh/sshd_config
+# sudo echo "GSSAPIAuthentication no" >> /etc/ssh/sshd_config
 
 # sudoers config
 # Only add the secure path line if it is not already present - Debian 7
 # includes it by default.
-grep -q 'secure_path' /etc/sudoers || sed -i -e '/Defaults\s\+env_reset/a Defaults\tsecure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"' /etc/sudoers
+# sudo grep -q 'secure_path' /etc/sudoers || sed -i -e '/Defaults\s\+env_reset/a Defaults\tsecure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"' /etc/sudoers
